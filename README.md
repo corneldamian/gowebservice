@@ -11,6 +11,8 @@ If you need to start a rapid web project using go, you can start from here
 - config load
 - windows/linux/mac os service (you can install it as a service)
 
+check the example dir, it's an working application using this service
+
 is using:
 [httpway](https://github.com/corneldamian/httpway.git)
 [httpwaymid](https://github.com/corneldamian/httpwaymid.git)
