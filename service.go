@@ -72,7 +72,7 @@ func (p *program) Start(srv service.Service) error {
 	p.router.NotFound = httpwaymid.NotFound(p.router)
 	p.router.MethodNotAllowed = httpwaymid.MethodNotAllowed(p.router)
 
-	p.router.SessionManager = httpwaymid.NewSessionManager()
+	p.router.SessionManager = httpwaymid.NewSessionManager(10 * time.Minute)
 	p.router.Logger = golog.GetLogger("general")
 
 	middlewares := p.middlewareFactory(p.router)
