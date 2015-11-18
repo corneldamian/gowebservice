@@ -2,7 +2,6 @@ package routing
 
 import (
 	"github.com/corneldamian/httpway"
-	"github.com/julienschmidt/httprouter"
 
 	"fmt"
 	"net/http"
@@ -26,7 +25,7 @@ func MiddlewaresFactory(router *httpway.Router) (routes map[string]*httpway.Rout
 
 	routes["public"] = router
 
-	routes["private"] = router.Middleware(func(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
+	routes["private"] = router.Middleware(func(w http.ResponseWriter, r *http.Request) {
 		ctx := httpway.GetContext(r)
 
 		if !ctx.Session().IsAuth() {
@@ -35,7 +34,7 @@ func MiddlewaresFactory(router *httpway.Router) (routes map[string]*httpway.Rout
 			return
 		}
 
-		ctx.Next(w, r, pr)
+		ctx.Next(w, r)
 	})
 
 	return

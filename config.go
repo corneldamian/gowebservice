@@ -14,6 +14,7 @@ type WebServer struct {
 	Access_Log        string
 	System_Log        string
 	Log_Level         string
+	Template_Dir      string
 }
 
 var cfg WebServerConfiger

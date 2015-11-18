@@ -69,6 +69,12 @@ func (p *program) Start(srv service.Service) error {
 		p.router = p.router.Middleware(httpwaymid.PanicCatcher)
 	}
 
+	p.router = p.router.Middleware(httpwaymid.JSONRenderer("jsonData", "statusCode"))
+
+	if c.Template_Dir != "" {
+		p.router = p.router.Middleware(httpwaymid.TemplateRenderer(c.Template_Dir, "templateName", "templateData", "statusCode"))
+	}
+
 	p.router.NotFound = httpwaymid.NotFound(p.router)
 	p.router.MethodNotAllowed = httpwaymid.MethodNotAllowed(p.router)
 
@@ -141,16 +147,15 @@ func (p *program) initLogger() error {
 		}
 	}
 
-
-
 	systemLogFile := filepath.Join(c.Log_Dir, c.System_Log)
 	verbosity := golog.LDefault | golog.LHeaderFooter
 	if golog.ToLogLevel(c.Log_Level) == golog.DEBUG {
 		verbosity = verbosity | golog.LFile
 	}
 	golog.NewLogger("general", systemLogFile, &golog.LoggerConfig{
-		Level:     golog.ToLogLevel(c.Log_Level),
-		Verbosity: verbosity,
+		Level:          golog.ToLogLevel(c.Log_Level),
+		Verbosity:      verbosity,
+		FileRotateSize: (2 << 23), /*16MB*/
 	})
 
 	if c.Enable_Access_Log {
@@ -160,6 +165,7 @@ func (p *program) initLogger() error {
 			Level:            golog.INFO,
 			Verbosity:        golog.LHeaderFooter,
 			HeaderWriter:     httpwaymid.AccessLogHeaderWriter,
+			FileRotateSize:   (2 << 23), /*16MB*/
 		})
 	}
 

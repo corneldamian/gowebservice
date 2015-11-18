@@ -3,13 +3,12 @@ package private
 import (
 	"github.com/corneldamian/httpway"
 	"github.com/corneldamian/httpwaymid"
-	"github.com/julienschmidt/httprouter"
 
 	"fmt"
 	"net/http"
 )
 
-func Profile(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
+func Profile(w http.ResponseWriter, r *http.Request) {
 	ctx := httpway.GetContext(r)
 
 	fmt.Fprintf(w, "logged in: %s", ctx.Session().Username())
@@ -17,7 +16,7 @@ func Profile(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
 	ctx.Log().Info("profile")
 }
 
-func Logout(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
+func Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := httpway.GetContext(r)
 
 	sess := ctx.Session().(*httpwaymid.Session)

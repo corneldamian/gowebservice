@@ -3,17 +3,16 @@ package public
 import (
 	"github.com/corneldamian/httpway"
 	"github.com/corneldamian/httpwaymid"
-	"github.com/julienschmidt/httprouter"
 
 	"fmt"
 	"net/http"
 )
 
-func Login(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
+func Login(w http.ResponseWriter, r *http.Request) {
 	ctx := httpway.GetContext(r)
 
 	sess := ctx.Session().(*httpwaymid.Session)
-	sess.SetUsername(pr.ByName("username"))
+	sess.SetUsername(ctx.ParamByName("username"))
 	sess.SetAuth(true)
 
 	fmt.Fprint(w, "logged in")
@@ -21,7 +20,7 @@ func Login(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
 	ctx.Log().Info("login")
 }
 
-func Index(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
+func Index(w http.ResponseWriter, r *http.Request) {
 	ctx := httpway.GetContext(r)
 
 	if ctx.Session().IsAuth() {
