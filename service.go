@@ -78,8 +78,8 @@ func (p *program) Start(srv service.Service) error {
 	p.router.NotFound = httpwaymid.NotFound(p.router)
 	p.router.MethodNotAllowed = httpwaymid.MethodNotAllowed(p.router)
 
-	p.router.SessionManager = httpwaymid.NewSessionManager(10 * time.Minute)
 	p.router.Logger = golog.GetLogger("general")
+	p.router.SessionManager = httpwaymid.NewSessionManager(c.Session_Timeout, c.Session_Expiration, golog.GetLogger("general"))
 
 	middlewares := p.middlewareFactory(p.router)
 
@@ -150,7 +150,7 @@ func (p *program) initLogger() error {
 	systemLogFile := filepath.Join(c.Log_Dir, c.System_Log)
 	verbosity := golog.LDefault | golog.LHeaderFooter
 	if golog.ToLogLevel(c.Log_Level) == golog.DEBUG {
-		verbosity = verbosity | golog.LFile
+		verbosity = verbosity | golog.LFile | golog.LMicroseconds
 	}
 	golog.NewLogger("general", systemLogFile, &golog.LoggerConfig{
 		Level:          golog.ToLogLevel(c.Log_Level),

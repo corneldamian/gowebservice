@@ -8,13 +8,15 @@ import (
 )
 
 type WebServer struct {
-	Address           string
-	Log_Dir           string
-	Enable_Access_Log bool
-	Access_Log        string
-	System_Log        string
-	Log_Level         string
-	Template_Dir      string
+	Address            string
+	Log_Dir            string
+	Enable_Access_Log  bool
+	Access_Log         string
+	System_Log         string
+	Log_Level          string
+	Session_Timeout    int
+	Session_Expiration int
+	Template_Dir       string
 }
 
 var cfg WebServerConfiger
