@@ -16,11 +16,13 @@ import (
 func DoInit(cfg WebServerConfiger,
 	serviceConfig *service.Config,
 	middlewareFactory func(*httpway.Router) map[string]*httpway.Router,
-	routeFactory map[string]func(*httpway.Router)) (service.Service, error) {
+	routeFactory map[string]func(*httpway.Router),
+	bootstrap func(server *httpway.Server, logger *golog.Logger, router *httpway.Router) error) (service.Service, error) {
 
 	p := &program{
 		middlewareFactory: middlewareFactory,
 		routeFactory:      routeFactory,
+		bootstrap:         bootstrap,
 	}
 
 	s, err := service.New(p, serviceConfig)
@@ -52,6 +54,8 @@ type program struct {
 	systemLog service.Logger
 	router    *httpway.Router
 
+	bootstrap func(server *httpway.Server, logger *golog.Logger, router *httpway.Router) error
+
 	middlewareFactory func(*httpway.Router) map[string]*httpway.Router
 	routeFactory      map[string]func(*httpway.Router)
 }
@@ -69,6 +73,15 @@ func (p *program) Start(srv service.Service) error {
 		p.router = p.router.Middleware(httpwaymid.PanicCatcher)
 	}
 
+	p.server = p.initWebServer()
+
+	p.router.Logger = golog.GetLogger("general")
+	p.router.SessionManager = httpwaymid.NewSessionManager(c.Session_Timeout, c.Session_Expiration, golog.GetLogger("general"))
+
+	if err := p.bootstrap(p.server, golog.GetLogger("general"), p.router); err != nil {
+		return err
+	}
+
 	p.router = p.router.Middleware(httpwaymid.JSONRenderer("jsonData", "statusCode"))
 
 	if c.Template_Dir != "" {
@@ -77,9 +90,6 @@ func (p *program) Start(srv service.Service) error {
 
 	p.router.NotFound = httpwaymid.NotFound(p.router)
 	p.router.MethodNotAllowed = httpwaymid.MethodNotAllowed(p.router)
-
-	p.router.Logger = golog.GetLogger("general")
-	p.router.SessionManager = httpwaymid.NewSessionManager(c.Session_Timeout, c.Session_Expiration, golog.GetLogger("general"))
 
 	middlewares := p.middlewareFactory(p.router)
 
@@ -92,10 +102,8 @@ func (p *program) Start(srv service.Service) error {
 		routeFactory(middleware)
 	}
 
-	if s, err := p.initWebServer(); err != nil {
+	if err := p.server.Start(); err != nil {
 		return err
-	} else {
-		p.server = s
 	}
 
 	return nil
@@ -116,17 +124,13 @@ func (p *program) Stop(s service.Service) error {
 	return nil
 }
 
-func (p *program) initWebServer() (*httpway.Server, error) {
+func (p *program) initWebServer() *httpway.Server {
 
 	server := httpway.NewServer(nil)
 	server.Addr = ":8080"
 	server.Handler = p.router
 
-	if err := server.Start(); err != nil {
-		return nil, err
-	}
-
-	return server, nil
+	return server
 }
 
 func (p *program) initLogger() error {
@@ -156,6 +160,7 @@ func (p *program) initLogger() error {
 		Level:          golog.ToLogLevel(c.Log_Level),
 		Verbosity:      verbosity,
 		FileRotateSize: (2 << 23), /*16MB*/
+		FileDepth:      5,
 	})
 
 	if c.Enable_Access_Log {
