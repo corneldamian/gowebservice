@@ -127,7 +127,7 @@ func (p *program) Stop(s service.Service) error {
 func (p *program) initWebServer() *httpway.Server {
 
 	server := httpway.NewServer(nil)
-	server.Addr = ":8080"
+	server.Addr = GetConfig().WebServerConfig().Address
 	server.Handler = p.router
 
 	return server
