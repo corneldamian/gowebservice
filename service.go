@@ -17,12 +17,15 @@ func DoInit(cfg WebServerConfiger,
 	serviceConfig *service.Config,
 	middlewareFactory func(*httpway.Router) map[string]*httpway.Router,
 	routeFactory map[string]func(*httpway.Router),
-	bootstrap func(server *httpway.Server, logger *golog.Logger, router *httpway.Router) error) (service.Service, error) {
+	bootstrap func(server *httpway.Server, logger *golog.Logger, router *httpway.Router) error,
+	stopstrap func(logger *golog.Logger) error,
+	) (service.Service, error) {
 
 	p := &program{
 		middlewareFactory: middlewareFactory,
 		routeFactory:      routeFactory,
 		bootstrap:         bootstrap,
+		stopstrap:         stopstrap,
 	}
 
 	s, err := service.New(p, serviceConfig)
@@ -55,6 +58,7 @@ type program struct {
 	router    *httpway.Router
 
 	bootstrap func(server *httpway.Server, logger *golog.Logger, router *httpway.Router) error
+	stopstrap func(logger *golog.Logger) error
 
 	middlewareFactory func(*httpway.Router) map[string]*httpway.Router
 	routeFactory      map[string]func(*httpway.Router)
@@ -88,8 +92,13 @@ func (p *program) Start(srv service.Service) error {
 		p.router = p.router.Middleware(httpwaymid.TemplateRenderer(c.Template_Dir, "templateName", "templateData", "statusCode"))
 	}
 
-	p.router.NotFound = httpwaymid.NotFound(p.router)
-	p.router.MethodNotAllowed = httpwaymid.MethodNotAllowed(p.router)
+	if p.router.NotFound == nil {
+		p.router.NotFound = httpwaymid.NotFound(p.router)
+	}
+
+	if p.router.MethodNotAllowed == nil {
+		p.router.MethodNotAllowed = httpwaymid.MethodNotAllowed(p.router)
+	}
 
 	middlewares := p.middlewareFactory(p.router)
 
@@ -110,6 +119,14 @@ func (p *program) Start(srv service.Service) error {
 }
 
 func (p *program) Stop(s service.Service) error {
+	if p.stopstrap != nil {
+		glog := golog.GetLogger("general")
+		glog.Warning("Executing stopping procedure")
+
+		if err := p.stopstrap(glog); err != nil {
+			glog.Error("Unable to finish ok the stopping procedure: %s", err)
+		}
+	}
 	if err := p.server.Stop(); err != nil {
 		return err
 	}
